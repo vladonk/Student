@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMH // TERMINAL_OS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg: #000000; --surface: #0d0d0d; --border: #222;
+            --text: #ffffff; --accent: #39FF14; --warning: #ff0000; --dim: #666;
+        }
+        * { box-sizing: border-box; border-radius: 0 !important; }
+        body {
+            background-color: var(--bg); color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 20px; text-transform: uppercase; font-size: 12px;
+        }
+        
+        /* HEADER & NAVIGARE */
+        header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--text); padding-bottom: 10px; margin-bottom: 20px; }
+        .nav-bar { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .nav-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-family: inherit; font-size: 14px; font-weight: bold; padding: 5px 10px; transition: 0.3s; }
+        .nav-btn:hover { color: var(--text); }
+        .nav-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        /* SISTEM DE VIZUALIZARE (PAGINI) */
+        .view { display: none; animation: fadeIn 0.3s; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* COMPONENTE GENERICE */
+        .top-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { border: 1px solid var(--border); padding: 15px; background: var(--surface); }
+        .stat-value { font-size: 2rem; font-weight: bold; display: block; color: var(--text); }
+        .stat-label { color: var(--dim); font-size: 9px; }
+        
+        .box { border: 1px solid var(--border); padding: 20px; background: var(--surface); position: relative; margin-bottom: 20px; }
+        .box-title { position: absolute; top: -10px; left: 15px; background: var(--bg); padding: 0 10px; font-weight: bold; color: var(--accent); }
+        
+        .btn-action { width: 100%; padding: 12px; background: none; border: 1px solid var(--text); color: var(--text); margin-top: 15px; cursor: pointer; font-family: inherit; font-size: 10px; }
+        .btn-action:hover { background: var(--text); color: var(--bg); }
+        #user-btn { cursor: pointer; border: 1px solid var(--accent); padding: 2px 8px; color: var(--accent); }
+
+        /* TASK-URI */
+        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+        .task-item.completed { opacity: 0.3; text-decoration: line-through; }
+        .tag-owner { color: var(--accent); border: 1px solid var(--accent); padding: 2px 6px; font-size: 8px; margin-top: 5px; display: inline-block; }
+
+        /* CALENDAR */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .cal-day-label { color: var(--dim); font-size: 10px; padding-bottom: 10px; }
+        .cal-cell { border: 1px solid #1a1a1a; padding: 15px 5px; min-height: 60px; cursor: pointer; font-size: 14px; position: relative; }
+        .cal-cell:hover { border-color: var(--dim); background: #111; }
+        .cal-cell.today { border-color: var(--accent); color: var(--accent); font-weight: bold; }
+        .cal-event-text { display: block; font-size: 8px; color: var(--accent); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* GRID-URI INTERIOARE */
+        .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1 style="margin:0; font-size: 1.2rem;">SMH // CONTROL_PANEL</h1>
+        <div style="color: var(--dim); font-size: 9px;">DATABASE_LINK: <span id="db-status">CONNECTING...</span></div>
+    </div>
+    <div style="text-align: right;">
+        <span id="user-btn" onclick="changeUser()">LOGIN</span><br>
+        <span id="live-clock" style="font-size: 9px; color: var(--dim);"></span>
+    </div>
+</header>
+
+<div class="nav-bar">
+    <button class="nav-btn active" onclick="switchView('dashboard')">[ MAIN_DASHBOARD ]</button>
+    <button class="nav-btn" onclick="switchView('calendar')">[ CALENDAR_DETALIAT ]</button>
+    <button class="nav-btn" onclick="switchView('tasks')">[ REGISTRU_TASK_URI ]</button>
+</div>
+
+<div id="view-dashboard" class="view active">
+    <div class="top-stats">
+        <div class="stat-card"><span class="stat-label">TASK-URI ACTIVE</span><span class="stat-value" id="count-active">0</span></div>
+        <div class="stat-card"><span class="stat-label">COMPLETATE</span><span class="stat-value" id="count-done">0</span></div>
+        <div class="stat-card"><span class="stat-label">ECHIPĂ CLOUD</span><span class="stat-value">03</span></div>
+        <div class="stat-card"><span class="stat-label">OBIECTIV PREZENȚĂ</span><span class="stat-value">30</span></div>
+    </div>
+
+    <div class="split-layout">
+        <div class="box" style="cursor: pointer;" onclick="switchView('tasks')">
+            <span class="box-title">ULTIMELE TASK-URI</span>
+            <div id="dash-tasks-preview" style="min-height: 150px; color: var(--dim);">SE ÎNCARCĂ...</div>
+            <div style="text-align: right; margin-top: 10px; color: var(--accent); font-size: 9px;">> CLICK PENTRU REGISTRUL COMPLET</div>
+        </div>
+
+        <div class="box" style="cursor: pointer;" onclick="switchView('calendar')">
+            <span class="box-title">URMĂTOARELE EVENIMENTE</span>
+            <div id="dash-events-preview" style="min-height: 150px; color: var(--dim);">SE ÎNCARCĂ...</div>
+            <div style="text-align: right; margin-top: 10px; color: var(--accent); font-size: 9px;">> CLICK PENTRU CALENDAR</div>
+        </div>
+    </div>
+
+    <div class="box">
+        <span class="box-title">STATUS ECHIPĂ</span>
+        <div id="team-list" class="split-layout" style="grid-template-columns: repeat(3, 1fr);"></div>
+    </div>
+</div>
+
+<div id="view-calendar" class="view">
+    <div class="box">
+        <span class="box-title">CALENDAR_PROIECT_FULL</span>
+        <div id="calendar-month-name" style="text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 1.5rem;">---</div>
+        <div class="calendar-grid" id="calendar-container"></div>
+        <div style="margin-top: 20px; font-size: 9px; color: var(--dim);">> CLICK PE ORICE ZI PENTRU A ADĂUGA SAU ȘTERGE UN EVENIMENT</div>
+    </div>
+</div>
+
+<div id="view-tasks" class="view">
+    <div class="box">
+        <span class="box-title">REGISTRU_ACTIVITĂȚI_COMPLET</span>
+        <div id="task-list" style="min-height: 300px;"></div>
+        <button class="btn-action" onclick="addTask()">[ + CREARE_TASK_NOU ]</button>
+    </div>
+</div>
+
+<script>
+    // --- CONFIGURARE SUPABASE ---
+    const SUPABASE_URL = 'https://leazrnipgytsvnhwcelc.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_viCJdI5RRPbXU6HPxdciXg_6ou-oYoY';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const team = ["PREȘEDINTE", "VICEPREȘEDINTE", "SECRETAR"];
+    let tasks = [];
+    let events = {};
+    let currentUser = localStorage.getItem('smh_user') || "PREȘEDINTE";
+
+    async function init() {
+        document.getElementById('user-btn').innerText = currentUser;
+        updateClock(); setInterval(updateClock, 1000);
+        await syncData(); setInterval(syncData, 5000);
+    }
+
+    function updateClock() { document.getElementById('live-clock').innerText = new Date().toLocaleString('ro-RO'); }
+
+    // --- SISTEM NAVIGARE ---
+    function switchView(viewId) {
+        // Ascundem toate paginile
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        // Dezactivăm butoanele
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Afișăm pagina dorită
+        document.getElementById('view-' + viewId).classList.add('active');
+        // Activăm butonul corespunzător
+        event.currentTarget.classList.add('active');
+    }
+
+    function changeUser() {
+        const id = prompt("INTRODU ID FUNCȚIE:\n1. PREȘEDINTE\n2. VICEPREȘEDINTE\n3. SECRETAR");
+        if(id && team[id-1]) {
+            currentUser = team[id-1];
+            localStorage.setItem('smh_user', currentUser);
+            location.reload();
+        }
+    }
+
+    // --- SINCRONIZARE BAZĂ DE DATE ---
+    async function syncData() {
+        try {
+            const { data: tData } = await _supabase.from('tasks').select('*').order('id', { ascending: false });
+            const { data: eData } = await _supabase.from('events').select('*');
+            if(tData) tasks = tData;
+            if(eData) { events = {}; eData.forEach(e => events[e.date_key] = e.note); }
+            
+            document.getElementById('db-status').innerText = "ONLINE";
+            document.getElementById('db-status').style.color = "var(--accent)";
+            
+            renderTasks(); 
+            renderCalendar(); 
+            renderTeam();
+            renderDashboardPreviews(); // Funcție nouă pentru pagina principală
+        } catch (e) { document.getElementById('db-status').innerText = "OFFLINE"; }
+    }
+
+    // --- RENDERERS PAGINI DETALIATE ---
+    function renderTeam() {
+        const list = document.getElementById('team-list');
+        list.innerHTML = team.map(m => `
+            <div style="border: 1px solid var(--border); padding: 10px; text-align: center;">
+                <div style="font-weight: bold; margin-bottom: 5px;">${m} ${m === currentUser ? '(TU)' : ''}</div>
+                <div style="color:${m === currentUser ? 'var(--accent)' : '#444'}; font-size: 10px;">${m === currentUser ? '● ONLINE' : '○ OFFLINE'}</div>
+            </div>
+        `).join('');
+    }
+
+    function renderCalendar() {
+        const container = document.getElementById('calendar-container');
+        const now = new Date(); const year = now.getFullYear(), month = now.getMonth();
+        document.getElementById('calendar-month-name').innerText = now.toLocaleString('ro-RO', { month: 'long' }).toUpperCase();
+        container.innerHTML = '<div class="cal-day-label">LUNI</div><div class="cal-day-label">MARȚI</div><div class="cal-day-label">MIERCURI</div><div class="cal-day-label">JOI</div><div class="cal-day-label">VINERI</div><div class="cal-day-label">SÂMBĂTĂ</div><div class="cal-day-label">DUMINICĂ</div>';
+        
+        let firstDay = new Date(year, month, 1).getDay();
+        firstDay = firstDay === 0 ? 6 : firstDay - 1;
+        
+        for(let i=0; i<firstDay; i++) container.innerHTML += '<div></div>';
+        for(let d=1; d<=new Date(year, month+1, 0).getDate(); d++) {
+            const dKey = `${year}-${month+1}-${d}`;
+            const cell = document.createElement('div');
+            cell.className = `cal-cell ${d === now.getDate() ? 'today' : ''}`;
+            
+            // Afișăm textul evenimentului direct în căsuța din calendar!
+            const eventHtml = events[dKey] ? `<span class="cal-event-text">${events[dKey]}</span>` : '';
+            cell.innerHTML = `<div>${d}</div>${eventHtml}`;
+            
+            cell.onclick = async () => {
+                const n = prompt(`EVENIMENT ${dKey}:`, events[dKey] || "");
+                if(n !== null) {
+                    if(n) await _supabase.from('events').upsert({ date_key: dKey, note: n.toUpperCase() });
+                    else await _supabase.from('events').delete().eq('date_key', dKey);
+                    syncData();
+                }
+            };
+            container.appendChild(cell);
+        }
+    }
+
+    function renderTasks() {
+        const list = document.getElementById('task-list');
+        list.innerHTML = tasks.map((t) => `
+            <div class="task-item ${t.completed ? 'completed' : ''}">
+                <div><div style="font-weight:bold; font-size: 14px;">> ${t.text}</div><div class="tag-owner">${t.who} | DL: ${t.deadline}</div></div>
+                <div>
+                    <button onclick="toggleTask(${t.id}, ${t.completed})" style="background:none; border:1px solid #444; color:white; cursor:pointer; padding: 5px 10px;">DONE</button>
+                    <button onclick="deleteTask(${t.id})" style="background:none; border:1px solid var(--warning); color:var(--warning); cursor:pointer; padding: 5px 10px;">X</button>
+                </div>
+            </div>
+        `).join('');
+        document.getElementById('count-active').innerText = tasks.filter(t => !t.completed).length;
+        document.getElementById('count-done').innerText = tasks.filter(t => t.completed).length;
+    }
+
+    // --- RENDERER DASHBOARD PREVIEWS ---
+    function renderDashboardPreviews() {
+        // Preview Task-uri (primele 3)
+        const dashTasks = document.getElementById('dash-tasks-preview');
+        const activeTasks = tasks.filter(t => !t.completed).slice(0, 3);
+        if(activeTasks.length === 0) {
+            dashTasks.innerHTML = "<div style='padding: 10px 0;'>NICIUN TASK ACTIV. SUNTEM LA ZI.</div>";
+        } else {
+            dashTasks.innerHTML = activeTasks.map(t => `<div style="padding: 8px 0; border-bottom: 1px solid #111;">> ${t.text} <span style="color:var(--accent); font-size:9px;">[${t.who}]</span></div>`).join('');
+        }
+
+        // Preview Evenimente (extragere din JSON)
+        const dashEvents = document.getElementById('dash-events-preview');
+        const upcoming = Object.keys(events).slice(-3); // Extragem ultimele 3 adăugate
+        if(upcoming.length === 0) {
+            dashEvents.innerHTML = "<div style='padding: 10px 0;'>NICIUN EVENIMENT PROGRAMAT.</div>";
+        } else {
+            dashEvents.innerHTML = upcoming.map(date => `<div style="padding: 8px 0; border-bottom: 1px solid #111;">[${date}] : <span style="color:white;">${events[date]}</span></div>`).join('');
+        }
+    }
+
+    // --- ACȚIUNI BAZĂ DE DATE ---
+    async function addTask() {
+        const txt = prompt("DESCRIERE TASK:"); if(!txt) return;
+        const whoIdx = prompt("ASIGNEAZĂ:\n1. PREȘEDINTE\n2. VICEPREȘEDINTE\n3. SECRETAR\nSAU scrie 'ALL'", "1");
+        const who = whoIdx.toUpperCase() === "ALL" ? "TOATĂ ECHIPA" : team[whoIdx-1] || "PREȘEDINTE";
+        const dl = prompt("DEADLINE:", "ASAP");
+        await _supabase.from('tasks').insert([{ text: txt.toUpperCase(), who, deadline: dl.toUpperCase(), completed: false }]);
+        syncData();
+    }
+
+    async function toggleTask(id, stat) { await _supabase.from('tasks').update({ completed: !stat }).eq('id', id); syncData(); }
+    async function deleteTask(id) { if(confirm("ȘTERGI?")) { await _supabase.from('tasks').delete().eq('id', id); syncData(); } }
+
+    init();
+</script>
+</body>
+</html>
