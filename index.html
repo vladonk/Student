@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SMH // TERMINAL_OS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -14,46 +14,68 @@
         body {
             background-color: var(--bg); color: var(--text);
             font-family: 'Courier New', Courier, monospace;
-            margin: 0; padding: 20px; text-transform: uppercase; font-size: 12px;
+            margin: 0; padding: 15px; text-transform: uppercase; font-size: 12px;
         }
         
-        header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--text); padding-bottom: 10px; margin-bottom: 20px; }
-        .nav-bar { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-        .nav-btn { background: none; border: none; color: var(--dim); cursor: pointer; font-family: inherit; font-size: 14px; font-weight: bold; padding: 5px 10px; transition: 0.3s; }
+        /* HEADER & NAV */
+        header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid var(--text); padding-bottom: 10px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .nav-bar { display: flex; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; }
+        .nav-btn { background: none; border: 1px solid transparent; color: var(--dim); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: bold; padding: 8px 12px; transition: 0.3s; flex-grow: 1; text-align: center; }
         .nav-btn:hover { color: var(--text); }
-        .nav-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .nav-btn.active { color: var(--accent); border: 1px solid var(--accent); }
 
         .view { display: none; animation: fadeIn 0.3s; }
         .view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* CARDS & GRIDS */
         .top-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
         .stat-card { border: 1px solid var(--border); padding: 15px; background: var(--surface); transition: 0.2s; }
         .stat-card.clickable:hover { border-color: var(--accent); cursor: pointer; }
-        .stat-value { font-size: 2rem; font-weight: bold; display: block; color: var(--text); }
+        .stat-value { font-size: 1.8rem; font-weight: bold; display: block; color: var(--text); }
         .stat-label { color: var(--dim); font-size: 9px; }
         
-        .box { border: 1px solid var(--border); padding: 20px; background: var(--surface); position: relative; margin-bottom: 20px; }
-        .box-title { position: absolute; top: -10px; left: 15px; background: var(--bg); padding: 0 10px; font-weight: bold; color: var(--accent); }
+        .box { border: 1px solid var(--border); padding: 20px 15px; background: var(--surface); position: relative; margin-bottom: 25px; }
+        .box-title { position: absolute; top: -10px; left: 10px; background: var(--bg); padding: 0 10px; font-weight: bold; color: var(--accent); font-size: 11px; }
         
-        .btn-action { width: 100%; padding: 12px; background: none; border: 1px solid var(--text); color: var(--text); margin-top: 15px; cursor: pointer; font-family: inherit; font-size: 10px; }
+        .btn-action { width: 100%; padding: 15px; background: none; border: 1px solid var(--text); color: var(--text); margin-top: 15px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: bold; }
         .btn-action:hover { background: var(--text); color: var(--bg); }
-        #user-btn { cursor: pointer; border: 1px solid var(--accent); padding: 2px 8px; color: var(--accent); }
+        #user-btn { cursor: pointer; border: 1px solid var(--accent); padding: 4px 8px; color: var(--accent); }
 
-        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1a1a1a; }
+        /* TASKS */
+        .task-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #1a1a1a; flex-wrap: wrap; gap: 10px; }
         .task-item.completed { opacity: 0.3; text-decoration: line-through; }
-        .tag-owner { color: var(--accent); border: 1px solid var(--accent); padding: 2px 6px; font-size: 8px; margin-top: 5px; display: inline-block; }
+        .task-actions { display: flex; gap: 5px; }
+        .task-actions button { padding: 8px 12px; font-size: 10px; }
+        .tag-owner { color: var(--accent); border: 1px solid var(--accent); padding: 2px 6px; font-size: 9px; margin-top: 5px; display: inline-block; }
 
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        /* CALENDAR */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; text-align: center; }
         .cal-day-label { color: var(--dim); font-size: 10px; padding-bottom: 10px; }
-        .cal-cell { border: 1px solid #1a1a1a; padding: 15px 5px; min-height: 60px; cursor: pointer; font-size: 14px; position: relative; }
+        .cal-cell { border: 1px solid #1a1a1a; padding: 10px 2px; min-height: 50px; cursor: pointer; font-size: 12px; position: relative; }
         .cal-cell:hover { border-color: var(--dim); background: #111; }
-        .cal-cell.today { border-color: var(--accent); color: var(--accent); font-weight: bold; }
-        .cal-event-text { display: block; font-size: 8px; color: var(--accent); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cal-nav { background: none; border: 1px solid var(--dim); color: var(--text); cursor: pointer; padding: 5px 15px; font-weight: bold; }
+        .cal-cell.today { border-color: var(--accent); color: var(--accent); font-weight: bold; background: rgba(57, 255, 20, 0.05); }
+        .cal-event-text { display: block; font-size: 8px; color: var(--accent); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .cal-nav { background: none; border: 1px solid var(--dim); color: var(--text); cursor: pointer; padding: 8px 12px; font-weight: bold; font-size: 10px; }
         .cal-nav:hover { background: var(--text); color: var(--bg); }
 
-        .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* ================= MOBILE ADAPTATION ================= */
+        @media (max-width: 768px) {
+            header { flex-direction: column; align-items: flex-start; }
+            .header-right { text-align: left !important; margin-top: 10px; }
+            .top-stats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .split-layout { grid-template-columns: 1fr !important; }
+            .stat-value { font-size: 1.5rem; }
+            .nav-bar { flex-direction: column; gap: 5px; border-bottom: none; }
+            .cal-cell { min-height: 45px; padding: 5px 1px; }
+            .task-item { flex-direction: column; align-items: flex-start; }
+            .task-actions { width: 100%; justify-content: space-between; margin-top: 5px; }
+            .task-actions button { flex-grow: 1; }
+            .cal-nav { padding: 5px 8px; }
+            #calendar-month-name { font-size: 1.2rem !important; }
+        }
     </style>
 </head>
 <body>
@@ -61,40 +83,39 @@
 <header>
     <div>
         <h1 style="margin:0; font-size: 1.2rem;">SMH // CONTROL_PANEL</h1>
-        <div style="color: var(--dim); font-size: 9px;">DATABASE_LINK: <span id="db-status">CONNECTING...</span></div>
+        <div style="color: var(--dim); font-size: 9px; margin-top: 5px;">DATABASE_LINK: <span id="db-status">CONNECTING...</span></div>
     </div>
-    <div style="text-align: right;">
+    <div class="header-right" style="text-align: right;">
         <span id="user-btn" onclick="changeUser()">LOGIN</span><br>
-        <span id="live-clock" style="font-size: 9px; color: var(--dim);"></span>
+        <span id="live-clock" style="font-size: 9px; color: var(--dim); display: block; margin-top: 5px;"></span>
     </div>
 </header>
 
 <div class="nav-bar">
-    <button class="nav-btn active" onclick="switchView('dashboard')">[ MAIN_DASHBOARD ]</button>
-    <button class="nav-btn" onclick="switchView('calendar')">[ CALENDAR_DETALIAT ]</button>
-    <button class="nav-btn" onclick="switchView('tasks')">[ REGISTRU_TASK_URI ]</button>
+    <button class="nav-btn active" onclick="switchView('dashboard')">DASHBOARD</button>
+    <button class="nav-btn" onclick="switchView('calendar')">CALENDAR</button>
+    <button class="nav-btn" onclick="switchView('tasks')">TASK-URI</button>
 </div>
 
 <div id="view-dashboard" class="view active">
     <div class="top-stats">
-        <div class="stat-card"><span class="stat-label">TASK-URI ACTIVE</span><span class="stat-value" id="count-active">0</span></div>
+        <div class="stat-card"><span class="stat-label">ACTIVE</span><span class="stat-value" id="count-active">0</span></div>
         <div class="stat-card"><span class="stat-label">COMPLETATE</span><span class="stat-value" id="count-done">0</span></div>
-        <div class="stat-card"><span class="stat-label">ECHIPĂ CLOUD</span><span class="stat-value">03</span></div>
+        <div class="stat-card"><span class="stat-label">ECHIPĂ</span><span class="stat-value">03</span></div>
         <div class="stat-card clickable" onclick="changeObiectiv()">
             <span class="stat-label">OBIECTIV PREZENȚĂ</span>
             <span class="stat-value" id="stat-obiectiv">0/30</span>
-            <div style="font-size: 8px; color: var(--dim); margin-top: 5px;">> CLICK PENTRU EDITARE</div>
         </div>
     </div>
 
     <div class="split-layout">
         <div class="box" style="cursor: pointer;" onclick="switchView('tasks')">
             <span class="box-title">ULTIMELE TASK-URI</span>
-            <div id="dash-tasks-preview" style="min-height: 150px; color: var(--dim);">SE ÎNCARCĂ...</div>
+            <div id="dash-tasks-preview" style="min-height: 100px; color: var(--dim);">SE ÎNCARCĂ...</div>
         </div>
         <div class="box" style="cursor: pointer;" onclick="switchView('calendar')">
             <span class="box-title">URMĂTOARELE EVENIMENTE</span>
-            <div id="dash-events-preview" style="min-height: 150px; color: var(--dim);">SE ÎNCARCĂ...</div>
+            <div id="dash-events-preview" style="min-height: 100px; color: var(--dim);">SE ÎNCARCĂ...</div>
         </div>
     </div>
 
@@ -108,9 +129,9 @@
     <div class="box">
         <span class="box-title">CALENDAR_PROIECT_FULL</span>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <button class="cal-nav" onclick="changeMonth(-1)">[ LUNA_PRECEDENTĂ ]</button>
-            <div id="calendar-month-name" style="font-weight: bold; font-size: 1.5rem;">---</div>
-            <button class="cal-nav" onclick="changeMonth(1)">[ LUNA_URMĂTOARE ]</button>
+            <button class="cal-nav" onclick="changeMonth(-1)">[ ÎNAPOI ]</button>
+            <div id="calendar-month-name" style="font-weight: bold; font-size: 1.5rem; text-align: center;">---</div>
+            <button class="cal-nav" onclick="changeMonth(1)">[ ÎNAINTE ]</button>
         </div>
         <div class="calendar-grid" id="calendar-container"></div>
     </div>
@@ -148,7 +169,8 @@
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         document.getElementById('view-' + viewId).classList.add('active');
-        if(event) event.currentTarget.classList.add('active');
+        if(event && event.currentTarget) event.currentTarget.classList.add('active');
+        window.scrollTo(0, 0); // Scroll sus la schimbarea paginii pe mobil
     }
 
     function changeUser() {
@@ -194,8 +216,8 @@
         const list = document.getElementById('team-list');
         list.innerHTML = team.map(m => `
             <div style="border: 1px solid var(--border); padding: 10px; text-align: center;">
-                <div style="font-weight: bold; margin-bottom: 5px;">${m} ${m === currentUser ? '(TU)' : ''}</div>
-                <div style="color:${m === currentUser ? 'var(--accent)' : '#444'}; font-size: 10px;">${m === currentUser ? '● ONLINE' : '○ OFFLINE'}</div>
+                <div style="font-weight: bold; margin-bottom: 5px; font-size: 10px;">${m} ${m === currentUser ? '(TU)' : ''}</div>
+                <div style="color:${m === currentUser ? 'var(--accent)' : '#444'}; font-size: 9px;">${m === currentUser ? '● ONLINE' : '○ OFFLINE'}</div>
             </div>
         `).join('');
     }
@@ -206,7 +228,8 @@
         const monthName = navDate.toLocaleString('ro-RO', { month: 'long' }).toUpperCase();
         document.getElementById('calendar-month-name').innerText = `${monthName} ${year}`;
         
-        container.innerHTML = '<div class="cal-day-label">LUNI</div><div class="cal-day-label">MARȚI</div><div class="cal-day-label">MIERCURI</div><div class="cal-day-label">JOI</div><div class="cal-day-label">VINERI</div><div class="cal-day-label">SÂMBĂTĂ</div><div class="cal-day-label">DUMINICĂ</div>';
+        // Nume scurte pe mobil ca sa incapa perfect
+        container.innerHTML = '<div class="cal-day-label">LU</div><div class="cal-day-label">MA</div><div class="cal-day-label">MI</div><div class="cal-day-label">JO</div><div class="cal-day-label">VI</div><div class="cal-day-label">SÂ</div><div class="cal-day-label">DU</div>';
         
         let firstDay = new Date(year, month, 1).getDay();
         firstDay = firstDay === 0 ? 6 : firstDay - 1;
@@ -236,10 +259,13 @@
         const list = document.getElementById('task-list');
         list.innerHTML = tasks.map((t) => `
             <div class="task-item ${t.completed ? 'completed' : ''}">
-                <div><div style="font-weight:bold; font-size: 14px;">> ${t.text}</div><div class="tag-owner">${t.who} | DL: ${t.deadline}</div></div>
-                <div>
-                    <button onclick="toggleTask(${t.id}, ${t.completed})" style="background:none; border:1px solid #444; color:white; cursor:pointer; padding: 5px 10px;">DONE</button>
-                    <button onclick="deleteTask(${t.id})" style="background:none; border:1px solid var(--warning); color:var(--warning); cursor:pointer; padding: 5px 10px;">X</button>
+                <div style="width: 100%;">
+                    <div style="font-weight:bold; font-size: 13px;">> ${t.text}</div>
+                    <div class="tag-owner">${t.who} | DL: ${t.deadline}</div>
+                </div>
+                <div class="task-actions">
+                    <button onclick="toggleTask(${t.id}, ${t.completed})" style="background:none; border:1px solid #444; color:white; cursor:pointer;">DONE</button>
+                    <button onclick="deleteTask(${t.id})" style="background:none; border:1px solid var(--warning); color:var(--warning); cursor:pointer;">STERGE</button>
                 </div>
             </div>
         `).join('');
@@ -261,13 +287,13 @@
         const txt = prompt("DESCRIERE TASK:"); if(!txt) return;
         const whoIdx = prompt("ASIGNEAZĂ:\n1. PREȘEDINTE\n2. VICEPREȘEDINTE\n3. SECRETAR\nSAU 'ALL'", "1");
         const who = whoIdx.toUpperCase() === "ALL" ? "TOATĂ ECHIPA" : team[whoIdx-1] || "PREȘEDINTE";
-        const dl = prompt("DEADLINE:", "ASAP");
+        const dl = prompt("DEADLINE (ex: 30 APR):", "ASAP");
         await _supabase.from('tasks').insert([{ text: txt.toUpperCase(), who, deadline: dl.toUpperCase(), completed: false }]);
         syncData();
     }
 
     async function toggleTask(id, stat) { await _supabase.from('tasks').update({ completed: !stat }).eq('id', id); syncData(); }
-    async function deleteTask(id) { if(confirm("ȘTERGI?")) { await _supabase.from('tasks').delete().eq('id', id); syncData(); } }
+    async function deleteTask(id) { if(confirm("ȘTERGI ACEST TASK?")) { await _supabase.from('tasks').delete().eq('id', id); syncData(); } }
 
     init();
 </script>
